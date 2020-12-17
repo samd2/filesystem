@@ -36,7 +36,7 @@ echo '==================================> BEFORE_SCRIPT'
 
 . $DRONE_CURRENT_BUILD_DIR/.drone/before-script.sh
 
-echo '==================================> COMPILE'
+echo '==================================> SCRIPT'
 
 BUILD_JOBS=`(nproc || sysctl -n hw.ncpu) 2> /dev/null`
 mkdir __build_static__ && cd __build_static__

@@ -38,6 +38,7 @@ def main(ctx):
   linux_cxx("UBSAN=1 TOOLSET=clang COMPILER=clang++-10 CXX Job 24", "clang++-10", packages="clang-10 libstdc++-9-dev", llvm_os="focal", llvm_ver="10", buildtype="boost", image="cppalliance/droneubuntu2004:1", environment={'UBSAN': '1', 'TOOLSET': 'clang', 'COMPILER': 'clang++-10', 'CXXSTD': '03,11,14,17,20', 'UBSAN_OPTIONS': 'print_stacktrace=1', 'DRONE_JOB_UUID': '4d134bc072'}),
   linux_cxx("TOOLSET=clang COMPILER=clang++-10 CXXSTD=03,1 Job 25", "clang++-10", packages="clang-10 libc++-10-dev libc++abi-10-dev", llvm_os="focal", llvm_ver="10", buildtype="boost", image="cppalliance/droneubuntu2004:1", environment={'CXXFLAGS': '-stdlib=libc++', 'LINKFLAGS': '-stdlib=libc++', 'TOOLSET': 'clang', 'COMPILER': 'clang++-10', 'CXXSTD': '03,11,14,17,20', 'DRONE_JOB_UUID': 'f6e1126ced'}),
   linux_cxx("UBSAN=1 TOOLSET=clang COMPILER=clang++-10 CXX Job 26", "clang++-10", packages="clang-10 libc++-10-dev libc++abi-10-dev", llvm_os="focal", llvm_ver="10", buildtype="boost", image="cppalliance/droneubuntu2004:1", environment={'CXXFLAGS': '-stdlib=libc++', 'LINKFLAGS': '-stdlib=libc++', 'UBSAN': '1', 'TOOLSET': 'clang', 'COMPILER': 'clang++-10', 'CXXSTD': '03,11,14,17,20', 'UBSAN_OPTIONS': 'print_stacktrace=1', 'DRONE_JOB_UUID': '887309d048'}),
+  osx_cxx("TOOLSET=clang COMPILER=clang++ CXXSTD=03,11,1 Job 27", "clang++", packages="", buildtype="boost", xcode_version="11.2", environment={'TOOLSET': 'clang', 'COMPILER': 'clang++', 'CXXSTD': '03,11,14,17', 'DRONE_JOB_OS_NAME': 'osx', 'DRONE_JOB_UUID': 'bc33ea4e26'}),
   linux_cxx("TEST_CMAKE=1 Job 29", "g++", packages="cmake", buildtype="411f714170-d91ee1b542", environment={'TEST_CMAKE': '1', 'DRONE_JOB_UUID': '7719a1c782'}),
   ]
 
@@ -131,8 +132,65 @@ def windows_cxx(name, cxx="g++", cxxflags="", packages="", llvm_os="", llvm_ver=
       }
     ]
   }
-def osx_cxx(name, cxx, cxxflags="", packages="", llvm_os="", llvm_ver="", arch="amd64", image="cppalliance/droneubuntu1604:1", buildtype="boost", environment={}, stepenvironment={}, jobuuid="", privileged=False):
-    pass
+def osx_cxx(name, cxx, cxxflags="", packages="", llvm_os="", llvm_ver="", arch="amd64", image="cppalliance/droneubuntu1604:1", osx_version="", xcode_version="", buildtype="boost", environment={}, stepenvironment={}, jobuuid="", privileged=False):
+  environment_global = {
+      # "TRAVIS_BUILD_DIR": "/drone/src",
+      "CXX": cxx,
+      "CXXFLAGS": cxxflags,
+      "PACKAGES": packages,
+      "LLVM_OS": llvm_os,
+      "LLVM_VER": llvm_ver
+      }
+
+  environment_current=environment_global
+  environment_current.update(environment)
+
+  # exec runner only has step-level environment variables:
+  environment_step = environment_current
+  environment_step.update(stepenvironment)
+
+  if xcode_version:
+    environment_step["DEVELOPER_DIR"] = "/Applications/Xcode-" + xcode_version +  ".app/Contents/Developer"
+    if not osx_version:
+        if xcode_version[0:2] in [ "12","11","10"]:
+            osx_version="catalina"
+        elif xcode_version[0:1] in [ "9","8","7","6"]:
+            osx_version="highsierra"
+  else:
+    osx_version="catalina"
+
+  return {
+    "name": "OSX %s" % name,
+    "kind": "pipeline",
+    "type": "exec",
+    "trigger": { "branch": [ "master","develop", "drone*", "bugfix/*", "feature/*", "fix/*", "pr/*" ] },
+    "platform": {
+      "os": "darwin",
+      "arch": arch
+    },
+    "node": {
+      "os": osx_version
+      },
+    "steps": [
+      {
+        "name": "Everything",
+        # "image": image,
+        "privileged" : privileged,
+        "environment": environment_step,
+        "commands": [
+
+          "echo '==================================> SETUP'",
+          "uname -a",
+          # "apt-get -o Acquire::Retries=3 update && apt-get -o Acquire::Retries=3 -y install git",
+          "echo '==================================> PACKAGES'",
+          "./.drone/osx-cxx-install.sh",
+
+          "echo '==================================> INSTALL AND COMPILE'",
+          "./.drone/%s.sh" % buildtype,
+        ]
+      }
+    ]
+  }
 
 def freebsd_cxx(name, cxx, cxxflags="", packages="", llvm_os="", llvm_ver="", arch="amd64", image="cppalliance/droneubuntu1604:1", buildtype="boost", environment={}, stepenvironment={}, jobuuid="", privileged=False):
     pass

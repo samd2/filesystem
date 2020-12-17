@@ -36,7 +36,7 @@ echo '==================================> BEFORE_SCRIPT'
 
 . $DRONE_CURRENT_BUILD_DIR/.drone/before-script.sh
 
-echo '==================================> COMPILE'
+echo '==================================> SCRIPT'
 
 echo "using $TOOLSET : : $COMPILER ;" > ~/user-config.jam
 BUILD_JOBS=`(nproc || sysctl -n hw.ncpu) 2> /dev/null`

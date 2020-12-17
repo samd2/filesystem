@@ -16,4 +16,4 @@ fi
 echo ">>>>> APT: UPDATE.."
 sudo -E apt-get -o Acquire::Retries=3 update
 echo ">>>>> APT: INSTALL ${PACKAGES}.."
-sudo -E apt-get -o Acquire::Retries=3 -y --no-install-suggests --no-install-recommends install ${PACKAGES}
+sudo -E DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -y --no-install-suggests --no-install-recommends install ${PACKAGES}
